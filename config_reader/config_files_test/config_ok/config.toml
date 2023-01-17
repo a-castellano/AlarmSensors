@@ -1,0 +1,24 @@
+[mqtt]
+host = "localhost"
+port = 1883
+user = "user"
+password = "password"
+wildcard_topic = "sensor/+"
+
+[sensor_triggers]
+home_armed = ["door1", "window1"]
+armed = ["door1", "window1", "motion1"]
+
+[rabbitmq]
+host = "localhost"
+port = 5672
+user = "guest"
+password = "pass"
+
+[queues]
+[queues.send_notification]
+name = "sensor_notification"
+
+[alarmmanager]
+host = "localhost"
+port = 3000
