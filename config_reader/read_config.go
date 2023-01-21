@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 
 	viperLib "github.com/spf13/viper"
 )
@@ -109,8 +108,6 @@ func ReadConfig() (Config, error) {
 	readedSenorTriggers := viper.GetStringMap("sensor_triggers")
 
 	for readedSenorTriggerName := range readedSenorTriggers {
-		fmt.Println(readedSenorTriggerName)
-		fmt.Println("")
 		if _, ok := readedSenorTriggerNames[readedSenorTriggerName]; ok {
 			return config, errors.New("Fatal error config: sensor trigger called " + readedSenorTriggerName + " was already declared.")
 		} else {
@@ -123,7 +120,6 @@ func ReadConfig() (Config, error) {
 
 		sensorList := viper.GetStringSlice("sensor_triggers." + readedSenorTriggerName + ".sensors")
 		for _, sensorName := range sensorList {
-			fmt.Println(sensorName)
 			if _, ok := readedSensorNames[sensorName]; !ok {
 				newSensor := Sensor{Name: sensorName}
 				newSensor.SensorTriggers = make(map[string]bool)
