@@ -1,0 +1,24 @@
+[mqtt]
+host = "192.168.59.197"
+port = 1883
+user = "mqtt_user"
+password = "UKg1x4hShA0dS20GaBJE"
+wildcard_topic = "zigbee2mqtt/"
+
+[sensor_triggers]
+[sensor_triggers.home]
+sensors = ["puerta_garaje","movimiento_sotano"]
+[sensor_triggers.armed]
+sensors = ["puerta_garaje","movimiento_sotano"]
+
+[rabbitmq]
+host = "localhost"
+port = 5672
+user = "guest"
+password = "pass"
+queue = "queue_name"
+
+[alarmmanager]
+host = "10.113.19.10"
+port = 3000
+deviceid = "3531440084cca88fafe1"

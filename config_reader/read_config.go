@@ -23,8 +23,9 @@ type Rabbitmq struct {
 }
 
 type AlarmManager struct {
-	Host string
-	Port int
+	Host     string
+	Port     int
+	DeviceId string
 }
 
 type Sensor struct {
@@ -54,7 +55,7 @@ func ReadConfig() (Config, error) {
 	requiredVariables := []string{"mqtt", "sensor_triggers", "rabbitmq", "alarmmanager"}
 	mqttRequiredVariables := []string{"host", "port", "user", "password", "wildcard_topic"}
 	rabbitmqRequiredVariables := []string{"host", "port", "user", "password", "queue"}
-	alarmManagerRequiredVariables := []string{"host", "port"}
+	alarmManagerRequiredVariables := []string{"host", "port", "deviceid"}
 
 	viper := viperLib.New()
 
@@ -93,7 +94,7 @@ func ReadConfig() (Config, error) {
 	}
 
 	for _, alarmManagerVariable := range alarmManagerRequiredVariables {
-		if !viper.IsSet("rabbitmq." + alarmManagerVariable) {
+		if !viper.IsSet("alarmmanager." + alarmManagerVariable) {
 			return config, errors.New("Fatal error config: no alarmManager " + alarmManagerVariable + " was found.")
 		}
 	}
@@ -121,6 +122,7 @@ func ReadConfig() (Config, error) {
 		sensorList := viper.GetStringSlice("sensor_triggers." + readedSenorTriggerName + ".sensors")
 		for _, sensorName := range sensorList {
 			if _, ok := readedSensorNames[sensorName]; !ok {
+				readedSensorNames[sensorName] = true
 				newSensor := Sensor{Name: sensorName}
 				newSensor.SensorTriggers = make(map[string]bool)
 				sensors[sensorName] = &newSensor
@@ -136,7 +138,7 @@ func ReadConfig() (Config, error) {
 
 	mqttConfig := Mqtt{Host: viper.GetString("mqtt.host"), Port: viper.GetInt("mqtt.port"), User: viper.GetString("mqtt.user"), Password: viper.GetString("mqtt.password"), WildcardTopic: viper.GetString("mqtt.wildcard_topic")}
 
-	alarmManagerConfig := AlarmManager{Host: viper.GetString("alarmmanager.host"), Port: viper.GetInt("alarmmanager.port")}
+	alarmManagerConfig := AlarmManager{Host: viper.GetString("alarmmanager.host"), Port: viper.GetInt("alarmmanager.port"), DeviceId: viper.GetString("alarmmanager.deviceid")}
 
 	config.Rabbitmq = rabbitmqConfig
 	config.Mqtt = mqttConfig
