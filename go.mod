@@ -6,6 +6,7 @@ require (
 	github.com/a-castellano/AlarmStatusWatcher v0.0.0-20220617163632-f44ad72651b9
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/spf13/viper v1.15.0
+	github.com/streadway/amqp v1.0.0
 )
 
 require (

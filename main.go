@@ -10,6 +10,7 @@ import (
 	config "github.com/a-castellano/AlarmSensors/config_reader"
 	apiwatcher "github.com/a-castellano/AlarmStatusWatcher/apiwatcher"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/streadway/amqp"
 )
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -31,9 +32,57 @@ func sub(client mqtt.Client, topicFromConfig string, syslog *syslog.Writer) {
 	syslog.Info(fmt.Sprintf("Subscribed to topic: %s", topic))
 }
 
+func sendMessageByQueue(rabbitmqConfig config.Rabbitmq, messageToSend string) error {
+
+	dialString := fmt.Sprintf("amqp://%s:%s@%s:%d/", rabbitmqConfig.User, rabbitmqConfig.Password, rabbitmqConfig.Host, rabbitmqConfig.Port)
+	conn, errDial := amqp.Dial(dialString)
+	defer conn.Close()
+
+	if errDial != nil {
+		fmt.Println(errDial)
+		return errDial
+	}
+
+	channel, errChannel := conn.Channel()
+	defer channel.Close()
+	if errChannel != nil {
+		return errChannel
+	}
+
+	queue, errQueue := channel.QueueDeclare(
+		rabbitmqConfig.Queue, // name
+		true,                 // durable
+		false,                // delete when unused
+		false,                // exclusive
+		false,                // no-wait
+		nil,                  // arguments
+	)
+	if errQueue != nil {
+		return errQueue
+	}
+
+	// send Job
+
+	err := channel.Publish(
+		"",         // exchange
+		queue.Name, // routing key
+		false,      // mandatory
+		false,
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         []byte(messageToSend),
+		})
+
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
 func handleMessage(serviceConfig config.Config, syslog *syslog.Writer, watcher apiwatcher.APIWatcher, alarmManagerRequester apiwatcher.Requester, topic string, message string) {
 
-	fmt.Printf("RECEIVED TOPIC: %s MESSAGE: %s\n", topic, message)
 	candidateSensor := alarmsensors.RetriveChildTopic(topic, serviceConfig.Mqtt.WildcardTopic)
 
 	if _, sensorIsManaged := serviceConfig.Sensors[candidateSensor]; sensorIsManaged {
@@ -42,27 +91,38 @@ func handleMessage(serviceConfig config.Config, syslog *syslog.Writer, watcher a
 			errorString := fmt.Sprintf("%v", checkSensorErr.Error())
 			syslog.Err(errorString)
 		} else {
-			fmt.Println(statusMessage)
 			syslog.Info(statusMessage)
 			// Check alarm status
-			fmt.Println(sensorActivated)
 			if sensorActivated == true {
 				apiInfo, apiInfoErr := watcher.ShowInfo(alarmManagerRequester)
-				currentAlarmMode := apiInfo.DevicesInfo[serviceConfig.AlarmManager.DeviceId].Mode
-				// Check if sensor triggers alarm
-				fmt.Println(serviceConfig.Sensors[candidateSensor].SensorTriggers)
-				if _, triggerAlarm := serviceConfig.Sensors[candidateSensor].SensorTriggers[currentAlarmMode]; triggerAlarm {
-					logMessage := fmt.Sprintf("%s sensor has been triggered and alarm status is %s, triggering alarm.", candidateSensor, currentAlarmMode)
-					syslog.Info(logMessage)
-					//					jsonString := fmt.Sprintf("{\"mode\":\"SOS\"}")
-					//					var jsonStr = []byte(jsonString)
-					//					apiURL := fmt.Sprintf("http://%s:%d/devices/status/%s", serviceConfig.AlarmManager.Host, serviceConfig.AlarmManager.Port, serviceConfig.AlarmManager.DeviceId)
-					//					req, _ := http.NewRequest("PUT", apiURL, bytes.NewBuffer(jsonStr))
-					//					req.Header.Set("Content-Type", "application/json")
-					//					client := &http.Client{}
-					//					client.Do(req)
+				if apiInfoErr != nil {
+					apiErrorString := fmt.Sprintf("%v", apiInfoErr.Error())
+					syslog.Err(apiErrorString)
+				} else {
+					currentAlarmMode := apiInfo.DevicesInfo[serviceConfig.AlarmManager.DeviceId].Mode
+					// Check if sensor triggers alarm
+					if _, triggerAlarm := serviceConfig.Sensors[candidateSensor].SensorTriggers[currentAlarmMode]; triggerAlarm {
+						logMessage := fmt.Sprintf("%s sensor has been triggered and alarm status is %s, triggering alarm.", candidateSensor, currentAlarmMode)
+						syslog.Info(logMessage)
+						sendMessageByQueue(serviceConfig.Rabbitmq, logMessage)
+						//					jsonString := fmt.Sprintf("{\"mode\":\"SOS\"}")
+						//					var jsonStr = []byte(jsonString)
+						//					apiURL := fmt.Sprintf("http://%s:%d/devices/status/%s", serviceConfig.AlarmManager.Host, serviceConfig.AlarmManager.Port, serviceConfig.AlarmManager.DeviceId)
+						//					req, _ := http.NewRequest("PUT", apiURL, bytes.NewBuffer(jsonStr))
+						//					req.Header.Set("Content-Type", "application/json")
+						//					client := &http.Client{}
+						//					client.Do(req)
 
+					} else {
+						logMessage := fmt.Sprintf("DEBUG - %s sensor has been triggered but alarm status is %s, NOT triggering alarm.", candidateSensor, currentAlarmMode)
+						syslog.Info(logMessage)
+						sendMessageByQueue(serviceConfig.Rabbitmq, logMessage)
+					}
 				}
+			} else {
+				debugMessage := fmt.Sprintf("DEBUG - %s", statusMessage)
+				syslog.Info(debugMessage)
+				sendMessageByQueue(serviceConfig.Rabbitmq, debugMessage)
 			}
 		}
 	}
