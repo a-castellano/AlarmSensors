@@ -1,0 +1,31 @@
+# nfpm example config file
+#
+# check https://nfpm.goreleaser.com/configuration for detailed usage
+#
+name: "windmaker-alarmsensors"
+arch: "amd64"
+platform: "linux"
+version: "v0.0.8"
+section: "default"
+priority: "extra"
+provides:
+- secutiycambot
+maintainer: "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>"
+description: |
+  Telegram bot for managing webcams and 
+    receiving alerts from then.
+vendor: "Windmaker"
+homepage: "https://git.windmaker.net/a-castellano/AlarmSensors"
+license: "BSD 2"
+changelog: "changelog.yaml"
+contents:
+- src: ./AlarmSensors
+  dst: /usr/local/bin/windmaker-alarmsensors
+- src: ./packaging/deb/default/windmaker-alarmsensors
+  dst: /etc/default/windmaker-alarmsensors
+- src: ./packaging/deb/systemd/windmaker-alarmsensors.service
+  dst: /usr/lib/systemd/system/windmaker-alarmsensors.service
+overrides:
+  deb:
+    scripts:
+      postinstall: ./packaging/deb/scripts/postinstall.sh

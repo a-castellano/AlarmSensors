@@ -1,0 +1,39 @@
+[Unit]
+Description=Windmaker AlarmSensors
+Documentation=https://git.windmaker.net/a-castellano/AlarmSensors
+Wants=network-online.target
+After=network-online.target rabbitmq-server.service
+
+[Service]
+EnvironmentFile=/etc/default/windmaker-alarmsensors
+User=nobody
+Group=nogroup
+Type=simple
+Restart=always
+ExecStart=/usr/local/bin/windmaker-alarmsensors
+TimeoutStopSec=20
+CapabilityBoundingSet=
+DeviceAllow=
+LockPersonality=true
+MemoryDenyWriteExecute=false
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=false
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=full
+RemoveIPC=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
+

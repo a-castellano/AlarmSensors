@@ -1,9 +1,11 @@
-image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_19:202211011830
+image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_19:202301231808
 
 stages:
     - unit_tests
     - coverage
     - scan
+    - report
+    - build
 
 unit_tests:
   stage: unit_tests
@@ -59,3 +61,52 @@ scan:
   - sonar-scanner -Dsonar.projectKey=AlarmSensors -Dsonar.sources=. -Dsonar.host.url=https://sonarqube.windmaker.net -Dsonar.login=${SONAR_LOGIN} -Dsonar.exclusions="*/*_test.go" -Dsonar.go.coverage.reportPaths="cover/coverage.report"
   dependencies:
   - coverage
+
+
+code_coverage_report:
+  stage: report
+  before_script:
+    - export CC=/usr/bin/clang
+    - export GOPATH="$(pwd)/go"
+    - mkdir -p "$(pwd)/go"
+    - go env -w GOPATH="$(pwd)/go"
+    - mkdir -p $GOPATH/src/github.com/a-castellano
+    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/AlarmSensors
+    - cd $GOPATH/src/github.com/a-castellano/AlarmSensors
+  script:
+    - make coverhtml
+  only:
+    - master
+  dependencies:
+    - coverage
+  artifacts:
+    name: "coverage-$CI_PIPELINE_ID"
+    paths:
+      - coverage.html
+      - cover
+    expire_in: 1 hour
+
+build_package:
+  stage: build
+  image: registry.windmaker.net:5005/a-castellano/limani/base_deb_golang_1_19_builder:202301231808
+  before_script:
+    - export CC=/usr/bin/clang
+    - export GOPATH="$(pwd)/go"
+    - mkdir -p "$(pwd)/go"
+    - go env -w GOPATH="$(pwd)/go"
+    - mkdir -p $GOPATH/src/github.com/a-castellano
+    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/AlarmSensors
+    - cd $GOPATH/src/github.com/a-castellano/AlarmSensors
+  script:
+    - make build
+    - cp changelog.yml changelog.yaml
+    - nfpm package --packager deb
+    - mkdir deb_package
+    - mv *.deb deb_package/
+  dependencies:
+    - coverage
+  artifacts:
+    name: "coverage-$CI_PIPELINE_ID"
+    paths:
+      - deb_package
+    expire_in: 1 hour
