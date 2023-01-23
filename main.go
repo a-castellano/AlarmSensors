@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log/syslog"
 	"net/http"
@@ -105,14 +106,13 @@ func handleMessage(serviceConfig config.Config, syslog *syslog.Writer, watcher a
 						logMessage := fmt.Sprintf("%s sensor has been triggered and alarm status is %s, triggering alarm.", candidateSensor, currentAlarmMode)
 						syslog.Info(logMessage)
 						sendMessageByQueue(serviceConfig.Rabbitmq, logMessage)
-						//					jsonString := fmt.Sprintf("{\"mode\":\"SOS\"}")
-						//					var jsonStr = []byte(jsonString)
-						//					apiURL := fmt.Sprintf("http://%s:%d/devices/status/%s", serviceConfig.AlarmManager.Host, serviceConfig.AlarmManager.Port, serviceConfig.AlarmManager.DeviceId)
-						//					req, _ := http.NewRequest("PUT", apiURL, bytes.NewBuffer(jsonStr))
-						//					req.Header.Set("Content-Type", "application/json")
-						//					client := &http.Client{}
-						//					client.Do(req)
-
+						jsonString := fmt.Sprintf("{\"mode\":\"SOS\"}")
+						var jsonStr = []byte(jsonString)
+						apiURL := fmt.Sprintf("http://%s:%d/devices/status/%s", serviceConfig.AlarmManager.Host, serviceConfig.AlarmManager.Port, serviceConfig.AlarmManager.DeviceId)
+						req, _ := http.NewRequest("PUT", apiURL, bytes.NewBuffer(jsonStr))
+						req.Header.Set("Content-Type", "application/json")
+						client := &http.Client{}
+						client.Do(req)
 					} else {
 						logMessage := fmt.Sprintf("DEBUG - %s sensor has been triggered but alarm status is %s, NOT triggering alarm.", candidateSensor, currentAlarmMode)
 						syslog.Info(logMessage)
