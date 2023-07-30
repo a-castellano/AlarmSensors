@@ -13,7 +13,7 @@ func RetriveChildTopic(wildcardTopic string, topic string) string {
 	return strings.TrimPrefix(wildcardTopic, topic)
 }
 
-func CheckSensorTriggered(sensorName string, payload string, storageInstance storage.Storage, ctx context.Context) (string, bool, error) {
+func CheckSensorTriggered(ctx context.Context, sensorName string, payload string, storageInstance storage.Storage) (string, bool, error) {
 
 	var activated bool = false
 	var message string

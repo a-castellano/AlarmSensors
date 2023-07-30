@@ -85,12 +85,12 @@ func sendMessageByQueue(rabbitmqConfig config.Rabbitmq, messageToSend string) er
 
 }
 
-func handleMessage(serviceConfig config.Config, syslog *syslog.Writer, watcher apiwatcher.APIWatcher, alarmManagerRequester apiwatcher.Requester, topic string, message string, storageInstance storage.Storage, ctx context.Context) {
+func handleMessage(ctx context.Context, serviceConfig config.Config, syslog *syslog.Writer, watcher apiwatcher.APIWatcher, alarmManagerRequester apiwatcher.Requester, topic string, message string, storageInstance storage.Storage) {
 
 	candidateSensor := alarmsensors.RetriveChildTopic(topic, serviceConfig.Mqtt.WildcardTopic)
 
 	if _, sensorIsManaged := serviceConfig.Sensors[candidateSensor]; sensorIsManaged {
-		statusMessage, sensorActivated, checkSensorErr := alarmsensors.CheckSensorTriggered(candidateSensor, message, storageInstance, ctx)
+		statusMessage, sensorActivated, checkSensorErr := alarmsensors.CheckSensorTriggered(ctx, candidateSensor, message, storageInstance)
 		if checkSensorErr != nil {
 			errorString := fmt.Sprintf("%v", checkSensorErr.Error())
 			syslog.Err(errorString)
@@ -200,7 +200,7 @@ func main() {
 
 	for {
 		incoming := <-mqttMessages
-		go handleMessage(serviceConfig, syslog, watcher, alarmManagerRequester, incoming[0], incoming[1], storageInstance, ctx)
+		go handleMessage(ctx, serviceConfig, syslog, watcher, alarmManagerRequester, incoming[0], incoming[1], storageInstance)
 	}
 
 }
