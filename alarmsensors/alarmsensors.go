@@ -29,6 +29,7 @@ func CheckSensorTriggered(ctx context.Context, sensorName string, payload string
 	if _, isContactSensor := sensorData["contact"]; isContactSensor {
 		sensorValue := sensorData["contact"].(bool)
 		changed, _ := storageInstance.UpdateAndNotify(ctx, sensorName, sensorValue)
+		storageChanged = changed
 		if changed == true {
 			if sensorValue == false {
 				message = fmt.Sprintf("Contact sensor '%s' has been opened.", sensorName)
