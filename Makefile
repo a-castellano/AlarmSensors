@@ -29,7 +29,7 @@ coverhtml: ## Generate global code coverage report in HTML
 	./scripts/coverage.sh html;
 
 build: ## Build the binary file
-	@go build -i -v $(PKG)
+	@go build -v $(PKG)
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
