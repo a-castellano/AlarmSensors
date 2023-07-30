@@ -5,15 +5,14 @@
 name: "windmaker-alarmsensors"
 arch: "amd64"
 platform: "linux"
-version: "v0.0.1"
+version: "v0.0.2"
 section: "default"
 priority: "extra"
 provides:
-- secutiycambot
+- /usr/local/bin/windmaker-alarmsensors
 maintainer: "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>"
 description: |
-  Telegram bot for managing webcams and 
-    receiving alerts from then.
+  Service for log and noify zigbee sensors and manage alarm firing.
 vendor: "Windmaker"
 homepage: "https://git.windmaker.net/a-castellano/AlarmSensors"
 license: "BSD 2"

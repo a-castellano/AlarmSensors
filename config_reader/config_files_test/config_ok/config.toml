@@ -22,3 +22,9 @@ queue = "queue_name"
 host = "localhost"
 port = 3000
 deviceid = "1"
+
+[redis]
+ip = "10.10.10.10"
+port = 6379
+password = "secret123"
+database = 1

@@ -38,12 +38,20 @@ type SensorTrigger struct {
 	Sensors map[string]*Sensor
 }
 
+type RedisServer struct {
+	IP       string
+	Port     int
+	Password string
+	Database int
+}
+
 type Config struct {
 	Mqtt           Mqtt
 	Rabbitmq       Rabbitmq
 	AlarmManager   AlarmManager
 	Sensors        map[string]*Sensor
 	SensorTriggers map[string]SensorTrigger
+	RedisServer    RedisServer
 }
 
 func ReadConfig() (Config, error) {
@@ -56,6 +64,7 @@ func ReadConfig() (Config, error) {
 	mqttRequiredVariables := []string{"host", "port", "user", "password", "wildcard_topic"}
 	rabbitmqRequiredVariables := []string{"host", "port", "user", "password", "queue"}
 	alarmManagerRequiredVariables := []string{"host", "port", "deviceid"}
+	redisRequiredVariables := []string{"ip", "port", "password", "database"}
 
 	viper := viperLib.New()
 
@@ -146,6 +155,18 @@ func ReadConfig() (Config, error) {
 
 	config.Sensors = sensors
 	config.SensorTriggers = sensorTriggers
+
+	// Redis
+	for _, requiredRedisVariable := range redisRequiredVariables {
+		if !viper.IsSet("redis." + requiredRedisVariable) {
+			return config, errors.New("Fatal error config: no redis " + requiredRedisVariable + " was defined.")
+		}
+
+	}
+	config.RedisServer.IP = viper.GetString("redis.ip")
+	config.RedisServer.Port = viper.GetInt("redis.port")
+	config.RedisServer.Password = viper.GetString("redis.password")
+	config.RedisServer.Database = viper.GetInt("redis.database")
 
 	return config, nil
 }

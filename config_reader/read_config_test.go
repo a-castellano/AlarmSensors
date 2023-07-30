@@ -29,6 +29,18 @@ func TestProcessConfigNoRabbitmqHost(t *testing.T) {
 	}
 }
 
+func TestProcessConfigNoRedisConfig(t *testing.T) {
+	os.Setenv("ALARM_SENSORS_CONFIG_FILE_LOCATION", "./config_files_test/config_no_redis/")
+	_, err := ReadConfig()
+	if err == nil {
+		t.Errorf("ReadConfig method without redis config should fail.")
+	} else {
+		if err.Error() != "Fatal error config: no redis ip was defined." {
+			t.Errorf("Error should be \"Fatal error config: no redis ip was defined.\" but error was '%s'.", err.Error())
+		}
+	}
+}
+
 func TestProcessConfigDuplicatedTriggers(t *testing.T) {
 	os.Setenv("ALARM_SENSORS_CONFIG_FILE_LOCATION", "./config_files_test/config_duplicated_trigger/")
 	_, err := ReadConfig()

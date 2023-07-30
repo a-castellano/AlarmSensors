@@ -1,4 +1,4 @@
-image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_20:202307291307 
+image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_20:202307300954
 
 stages:
     - unit_tests
@@ -88,7 +88,7 @@ code_coverage_report:
 
 build_package:
   stage: build
-  image: registry.windmaker.net:5005/a-castellano/limani/base_deb_golang_1_20_builder:202307291307 
+  image: registry.windmaker.net:5005/a-castellano/limani/base_deb_golang_1_20_builder:202307300954
   before_script:
     - export CC=/usr/bin/clang
     - export GOPATH="$(pwd)/go"

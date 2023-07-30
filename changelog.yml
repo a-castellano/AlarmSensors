@@ -1,10 +1,10 @@
-- semver: 0.0.1
-  date: 2023-01-23T19:50:53.583179887+01:00
+- semver: 0.0.2
+  date: 2023-07-30T19:50:53.583179887+01:00
   packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
   changes:
   - commit: 5d3b10f5700fafd6cdd3557c5ced78a784dacd2f
     note: |-
-      First version
+      Add Redis integration
     author:
       name: Álvaro Castellano Vela
       email: alvaro.castellano.vela@gmail.com
