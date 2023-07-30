@@ -9,9 +9,12 @@ import (
 
 	alarmsensors "github.com/a-castellano/AlarmSensors/alarmsensors"
 	config "github.com/a-castellano/AlarmSensors/config_reader"
+	storage "github.com/a-castellano/AlarmSensors/storage"
 	apiwatcher "github.com/a-castellano/AlarmStatusWatcher/apiwatcher"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	goredis "github.com/go-redis/redis/v8"
 	"github.com/streadway/amqp"
+	"golang.org/x/net/context"
 )
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -82,12 +85,12 @@ func sendMessageByQueue(rabbitmqConfig config.Rabbitmq, messageToSend string) er
 
 }
 
-func handleMessage(serviceConfig config.Config, syslog *syslog.Writer, watcher apiwatcher.APIWatcher, alarmManagerRequester apiwatcher.Requester, topic string, message string) {
+func handleMessage(serviceConfig config.Config, syslog *syslog.Writer, watcher apiwatcher.APIWatcher, alarmManagerRequester apiwatcher.Requester, topic string, message string, storageInstance storage.Storage, ctx context.Context) {
 
 	candidateSensor := alarmsensors.RetriveChildTopic(topic, serviceConfig.Mqtt.WildcardTopic)
 
 	if _, sensorIsManaged := serviceConfig.Sensors[candidateSensor]; sensorIsManaged {
-		statusMessage, sensorActivated, checkSensorErr := alarmsensors.CheckSensorTriggered(candidateSensor, message)
+		statusMessage, sensorActivated, checkSensorErr := alarmsensors.CheckSensorTriggered(candidateSensor, message, storageInstance, ctx)
 		if checkSensorErr != nil {
 			errorString := fmt.Sprintf("%v", checkSensorErr.Error())
 			syslog.Err(errorString)
@@ -146,6 +149,21 @@ func main() {
 		Timeout: time.Second * 5, // Maximum of 5 secs
 	}
 
+	redisAddress := fmt.Sprintf("%s:%d", config.RedisServer.IP, config.RedisServer.Port)
+	redisClient := goredis.NewClient(&goredis.Options{
+		Addr:     redisAddress,
+		Password: config.RedisServer.Password,
+		DB:       config.RedisServer.Database,
+	})
+
+	ctx := context.Background()
+
+	redisErr := redisClient.Set(ctx, "checkKey", "key", 1000000).Err()
+	if redisErr != nil {
+		panic(redisErr)
+	}
+	storageInstance := storage.Storage{RedisClient: redisClient}
+
 	syslog.Info("Establishing connection with alarmManager.")
 
 	watcher := apiwatcher.APIWatcher{Host: serviceConfig.AlarmManager.Host, Port: serviceConfig.AlarmManager.Port}
@@ -182,7 +200,7 @@ func main() {
 
 	for {
 		incoming := <-mqttMessages
-		go handleMessage(serviceConfig, syslog, watcher, alarmManagerRequester, incoming[0], incoming[1])
+		go handleMessage(serviceConfig, syslog, watcher, alarmManagerRequester, incoming[0], incoming[1], storageInstance, ctx)
 	}
 
 }
