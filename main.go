@@ -149,11 +149,11 @@ func main() {
 		Timeout: time.Second * 5, // Maximum of 5 secs
 	}
 
-	redisAddress := fmt.Sprintf("%s:%d", config.RedisServer.IP, config.RedisServer.Port)
+	redisAddress := fmt.Sprintf("%s:%d", serviceConfig.RedisServer.IP, serviceConfig.RedisServer.Port)
 	redisClient := goredis.NewClient(&goredis.Options{
 		Addr:     redisAddress,
-		Password: config.RedisServer.Password,
-		DB:       config.RedisServer.Database,
+		Password: serviceConfig.RedisServer.Password,
+		DB:       serviceConfig.RedisServer.Database,
 	})
 
 	ctx := context.Background()
