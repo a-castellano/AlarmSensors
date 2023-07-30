@@ -40,7 +40,7 @@ func (storage Storage) UpdateAndNotify(ctx context.Context, sensorName string, s
 		// Check if Triggered value differs
 		if sensorValue != sensorStatus.Triggered {
 			changed = true
-			storage.RedisClient.HSet(ctx, sensorName, "triggered", sensorStatus.Triggered)
+			storage.RedisClient.HSet(ctx, sensorName, "triggered", sensorValue)
 		}
 		sensorStatus.LastUpdated = now.Unix()
 		storage.RedisClient.HSet(ctx, sensorName, "lastupdated", sensorStatus.LastUpdated)

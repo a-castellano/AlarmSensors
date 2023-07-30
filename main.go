@@ -90,14 +90,14 @@ func handleMessage(ctx context.Context, serviceConfig config.Config, syslog *sys
 	candidateSensor := alarmsensors.RetriveChildTopic(topic, serviceConfig.Mqtt.WildcardTopic)
 
 	if _, sensorIsManaged := serviceConfig.Sensors[candidateSensor]; sensorIsManaged {
-		statusMessage, sensorActivated, checkSensorErr := alarmsensors.CheckSensorTriggered(ctx, candidateSensor, message, storageInstance)
+		changed, statusMessage, sensorActivated, checkSensorErr := alarmsensors.CheckSensorTriggered(ctx, candidateSensor, message, storageInstance)
 		if checkSensorErr != nil {
 			errorString := fmt.Sprintf("%v", checkSensorErr.Error())
 			syslog.Err(errorString)
 		} else {
 			syslog.Info(statusMessage)
 			// Check alarm status
-			if sensorActivated == true {
+			if sensorActivated == true && changed == true {
 				apiInfo, apiInfoErr := watcher.ShowInfo(alarmManagerRequester)
 				if apiInfoErr != nil {
 					apiErrorString := fmt.Sprintf("%v", apiInfoErr.Error())

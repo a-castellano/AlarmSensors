@@ -13,16 +13,17 @@ func RetriveChildTopic(wildcardTopic string, topic string) string {
 	return strings.TrimPrefix(wildcardTopic, topic)
 }
 
-func CheckSensorTriggered(ctx context.Context, sensorName string, payload string, storageInstance storage.Storage) (string, bool, error) {
+func CheckSensorTriggered(ctx context.Context, sensorName string, payload string, storageInstance storage.Storage) (bool, string, bool, error) {
 
 	var activated bool = false
+	var storageChanged bool = false
 	var message string
 
 	var sensorData map[string]interface{}
 
 	err := json.Unmarshal([]byte(payload), &sensorData)
 	if err != nil {
-		return message, activated, err
+		return storageChanged, message, activated, err
 	}
 	// Check if sensor type is conectat one
 	if _, isContactSensor := sensorData["contact"]; isContactSensor {
@@ -41,6 +42,7 @@ func CheckSensorTriggered(ctx context.Context, sensorName string, payload string
 	if _, isMotionSensor := sensorData["occupancy"]; isMotionSensor {
 		sensorValue := sensorData["occupancy"].(bool)
 		changed, _ := storageInstance.UpdateAndNotify(ctx, sensorName, sensorValue)
+		storageChanged = changed
 		if changed == true {
 			if sensorValue == true {
 				message = fmt.Sprintf("Motion sensor '%s' has been triggered.", sensorName)
@@ -50,5 +52,5 @@ func CheckSensorTriggered(ctx context.Context, sensorName string, payload string
 			}
 		}
 	}
-	return message, activated, nil
+	return storageChanged, message, activated, nil
 }
